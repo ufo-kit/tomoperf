@@ -1,0 +1,10 @@
+{
+    "name": "lprec-dry",
+    "command": "python",
+    "args": [
+        "drivers/lprec.py",
+        "--width", "${width}",
+        "--num-projections", "${num_projections}",
+        "--num-slices", "${num_slices}"
+    ]
+}

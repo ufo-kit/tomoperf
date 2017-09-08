@@ -1,0 +1,208 @@
+#!/usr/bin/env python
+
+import os
+import re
+import json
+import csv
+import shlex
+import time
+import datetime
+import argparse
+import logging
+import itertools
+import daiquiri
+from string import Template
+from subprocess import Popen, PIPE
+from marshmallow import Schema, fields, post_load
+from os.path import join as pjoin
+
+
+def lines(fp):
+    while True:
+        line = fp.readline()
+        if line:
+            yield line.rstrip()
+        else:
+            break
+
+
+def monitor_process(cmd_line):
+    proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE)
+
+    for line in lines(proc.stdout):
+        logging.debug(line)
+
+    for line in lines(proc.stderr):
+        logging.error(line)
+
+    proc.wait()
+    return proc
+
+
+class Runner(object):
+    def __init__(self, data):
+        self._data = data
+
+    @property
+    def name(self):
+        return self._data['name']
+
+    @property
+    def args(self):
+        return self._data['args']
+
+    @property
+    def params(self):
+        return self._data.get('params', {})
+
+    @property
+    def param_names(self):
+        pattern = re.compile(r'\$\{(\w+)\}')
+        params = []
+
+        for arg in self.args:
+            for match in pattern.finditer(arg):
+                params.append(match.group(1))
+
+        return params
+
+    def run(self, params, verbose):
+        logging.info("Running {} ...".format(self.name))
+        logging.info("Parameters: {}".format(' '.join(('{}={}'.format(k, v) for k, v in params.items()))))
+
+        try:
+            args = [Template(a).substitute(**params) for a in self.args]
+        except KeyError as e:
+            raise ValueError("Cannot substitute template parameter {}".format(e))
+
+        cmd_line = [self._data['command']]
+
+        if verbose and 'verbose_flag' in self._data:
+            cmd_line.append(self._data['verbose_flag'])
+
+        cmd_line.extend(args)
+        logging.debug("Command: {}".format(cmd_line))
+
+        start = time.time()
+        proc = monitor_process(cmd_line)
+        end = time.time()
+        elapsed = end - start
+
+        if proc.returncode == 0:
+            logging.info("SUCCESS: {:3.5f}s elapsed".format(elapsed))
+
+        return elapsed
+
+
+class RunnerSchema(Schema):
+    name = fields.Str(required=True)
+    command = fields.Str(required=True)
+    args = fields.List(fields.String, required=True)
+    verbose_flag = fields.Str(load_from='verbose-flag')
+    params = fields.Dict()
+
+    @post_load
+    def make_user(self, data):
+        return Runner(data)
+
+
+def get_runners():
+    filenames = sorted((x for x in os.listdir(os.path.abspath('runners')) if x.endswith('.json')))
+    schema = RunnerSchema()
+    return (schema.loads(open(pjoin('runners', x)).read()).data for x in filenames)
+
+
+def cmd_list(args):
+    for runner in get_runners():
+        print(runner.name)
+
+
+def cmd_run(args):
+    schema = RunnerSchema()
+    runners = {x.name: x for x in get_runners()}
+
+    if args.name:
+        if not args.name in runners.keys():
+            raise RuntimeError("`{}' does not exist".format(args.name))
+
+        runner = runners[args.name]
+        runners = {runner.name: runner}
+
+    results = []
+
+    for name, runner in runners.items():
+        missing = set(runner.param_names) - set(args.params).union(set(runner.params.keys()))
+
+        if missing:
+            missing = ', '.join(missing)
+            logging.warn("Ignoring {}, cannot find: {}".format(name, missing))
+            continue
+
+        for elem in itertools.product(*runner.params.values()):
+            product = dict(zip(runner.params.keys(), elem))
+            params = args.params.copy()
+            params.update(product)
+            elapsed = runner.run(params, args.verbose)
+            results.append((name, elapsed, params))
+
+    param_index = {}
+    last_index = 0
+    
+    for name, elapsed, params in results:
+        for k in params.keys():
+            if not k in param_index:
+                param_index[k] = last_index
+                last_index += 1
+
+    csv_name = 'result-{}.csv'.format(datetime.datetime.now().isoformat().split('.')[0])
+
+    with open(csv_name, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['name', 'elapsed'] + param_index.keys())
+
+        for name, elapsed, params in results:
+            row = [name, elapsed] + [None]*last_index
+            
+            for k, v in params.items():
+                row[param_index[k] + 2] = v
+
+            writer.writerow(row)
+
+
+def Params(arg):
+    return dict((tuple(kv.split('=')) for kv in arg.split()))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--verbose', action='store_true', help="output debug messages")
+
+    cmd_parsers = parser.add_subparsers(title="Commands", dest='commands')
+    cmd_parsers.required = True
+
+    list_parser = cmd_parsers.add_parser('list',
+            help="List all runners")
+    list_parser.set_defaults(run=cmd_list)
+
+    run_parser = cmd_parsers.add_parser('run',
+            help="Run one or all runners")
+    run_parser.add_argument('--name', type=str,
+            help="Use this particular runner")
+    run_parser.add_argument('--params', type=Params, default=[],
+            help="Template parameters")
+    run_parser.set_defaults(run=cmd_run)
+
+    args = parser.parse_args()
+
+    log_formatter = daiquiri.formatter.ColorFormatter(fmt="%(color)s%(levelname)-8.8s %(message)s%(color_stop)s")
+    log_output = daiquiri.output.Stream(formatter=log_formatter)
+    daiquiri.setup(level=logging.DEBUG if args.verbose else logging.INFO, outputs=(log_output,))
+
+    try:
+        args.run(args)
+    except Exception as e:
+        logging.error(str(e))
+
+
+if __name__ == '__main__':
+    main()
