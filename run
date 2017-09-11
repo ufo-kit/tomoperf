@@ -117,6 +117,31 @@ def cmd_list(args):
         print(runner.name)
 
 
+def write_results(results):
+    param_index = {}
+    last_index = 0
+
+    for name, elapsed, params in results:
+        for k in params.keys():
+            if not k in param_index:
+                param_index[k] = last_index
+                last_index += 1
+
+    csv_name = 'result-{}.csv'.format(datetime.datetime.now().isoformat().split('.')[0])
+
+    with open(csv_name, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['name', 'elapsed'] + param_index.keys())
+
+        for name, elapsed, params in results:
+            row = [name, elapsed] + [None]*last_index
+
+            for k, v in params.items():
+                row[param_index[k] + 2] = v
+
+            writer.writerow(row)
+
+
 def cmd_run(args):
     schema = RunnerSchema()
     runners = {x.name: x for x in get_runners()}
@@ -138,39 +163,23 @@ def cmd_run(args):
             logging.warn("Ignoring {}, cannot find: {}".format(name, missing))
             continue
 
-        for elem in itertools.product(*runner.params.values()):
-            product = dict(zip(runner.params.keys(), elem))
-            params = args.params.copy()
-            params.update(product)
-            elapsed = runner.run(params, args.verbose)
-            results.append((name, elapsed, params))
+        params = args.params.copy()
+        params.update(runner.params)
 
-    param_index = {}
-    last_index = 0
-    
-    for name, elapsed, params in results:
-        for k in params.keys():
-            if not k in param_index:
-                param_index[k] = last_index
-                last_index += 1
+        for elem in itertools.product(*params.values()):
+            product = dict(zip(params.keys(), elem))
+            elapsed = runner.run(product, args.verbose)
+            results.append((name, elapsed, product))
 
-    csv_name = 'result-{}.csv'.format(datetime.datetime.now().isoformat().split('.')[0])
-
-    with open(csv_name, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(['name', 'elapsed'] + param_index.keys())
-
-        for name, elapsed, params in results:
-            row = [name, elapsed] + [None]*last_index
-            
-            for k, v in params.items():
-                row[param_index[k] + 2] = v
-
-            writer.writerow(row)
+    write_results(results)
 
 
 def Params(arg):
-    return dict((tuple(kv.split('=')) for kv in arg.split()))
+    def split(x):
+        k, v = x.split('=')
+        return k, v.split(',')
+
+    return dict(split(x) for x in arg.split())
 
 
 def main():

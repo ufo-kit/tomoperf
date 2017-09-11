@@ -54,6 +54,12 @@ the command line. Therefore, to run this specification you have to call
 Note a final parameter product is computed and passed to the command. That means
 the foo specification is run eight times (first with `age=12, city="New York",
 name="bar"`, second with `age=12, city="Berlin", name="bar"` and so on).
+Similarly to the `args` list you can pass a list of parameters to scan as well,
+i.e.
+
+    $ ./run run foo --params "x=1,2,4 y=5,6"
+
+computes all combinations of `x` and `y`.
 
 
 ## Dependencies
