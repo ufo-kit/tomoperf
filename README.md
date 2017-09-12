@@ -1,22 +1,22 @@
 ## About
 
-The `run` script executes commands described in *runner* specifications which
+The `perf` script executes commands described in *runner* specifications which
 are found in the `runners/` subdirectory and measures the run time. For further
 analysis, the runner name, parameters and the run time are saved in a CSV file.
-The `run` script works like the Git binary and features two commands `run` and
+The `perf` script works like the Git binary and features two commands `perf` and
 `list` at the moment. To list all known runners call
 
-    $ ./run list
+    $ ./perf list
 
 and to run all runners call
 
-    $ ./run run
+    $ ./perf run
 
 To run a specific runner use
 
-    $ ./run run --name foo
+    $ ./perf run --name foo
 
-and to see more output pass the `--verbose` flag to the `run` script.
+and to see more output pass the `--verbose` flag to the `perf` script.
 
 
 ### Runner specification
@@ -49,7 +49,7 @@ Note the templates denoted by `${xxx}` in the `args` list. If a template cannot
 be substituted from a value in the `params` dictionary, it *must be* supplied on
 the command line. Therefore, to run this specification you have to call
 
-    $ ./run run foo --params "name=bar"
+    $ ./perf run foo --params "name=bar"
 
 Note a final parameter product is computed and passed to the command. That means
 the foo specification is run eight times (first with `age=12, city="New York",
@@ -57,14 +57,14 @@ name="bar"`, second with `age=12, city="Berlin", name="bar"` and so on).
 Similarly to the `args` list you can pass a list of parameters to scan as well,
 i.e.
 
-    $ ./run run foo --params "x=1,2,4 y=5,6"
+    $ ./perf run foo --params "x=1,2,4 y=5,6"
 
 computes all combinations of `x` and `y`.
 
 
 ## Dependencies
 
-Besides the Python standard library, the `run` script requires
+Besides the Python standard library, the `perf` script requires
 
 * daiquiri for logging setup
 * marshmallow for loading and validation of runner descriptions
