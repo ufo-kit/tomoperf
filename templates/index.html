@@ -1,0 +1,33 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/milligram.min.css">
+  </head>
+  <body>
+    <div class="container">
+    <h2>Full data</h2>
+    <table>
+      <thead>
+        <tr>
+          {% for header in headers %}
+            <th>{{ header }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for name in names %}
+          {% for row in data[data.name == name].iterrows() %}
+          <tr>
+            <td>{{ row[1]['name'] }}</td>
+            <td>{{ row[1]['elapsed'] | round(3) }}</td>
+            {% for elem in row[1][2:] %}
+              <td>{{ elem }}</td>
+            {% endfor %}
+          </tr>
+          {% endfor %}
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </body>
+</html>

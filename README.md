@@ -68,3 +68,8 @@ Besides the Python standard library, the `perf` script requires
 
 * daiquiri for logging setup
 * marshmallow for loading and validation of runner descriptions
+
+Additionally, the `chart` subcommand requires
+
+* jinja2
+* pandas

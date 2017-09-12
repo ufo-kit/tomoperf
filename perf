@@ -10,6 +10,7 @@ import datetime
 import argparse
 import logging
 import itertools
+import collections
 import daiquiri
 from string import Template
 from subprocess import Popen, PIPE
@@ -174,6 +175,22 @@ def cmd_run(args):
     write_results(results)
 
 
+def cmd_chart(args):
+    import pandas as pd
+    import jinja2
+
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
+    template = env.get_template('index.html')
+
+    data = pd.read_csv(args.filename)
+    data.set_index(keys=['name'])
+    headers = list(data)
+    names = data['name'].unique()
+
+    with open('build/index.html', 'w') as f:
+        f.write(template.render(data=data, headers=headers, names=names))
+
+
 def Params(arg):
     def split(x):
         k, v = x.split('=')
@@ -200,6 +217,12 @@ def main():
     run_parser.add_argument('--params', type=Params, default=[],
             help="Template parameters")
     run_parser.set_defaults(run=cmd_run)
+
+    chart_parser = cmd_parsers.add_parser('chart',
+            help="Analyze results")
+    chart_parser.add_argument('filename', type=argparse.FileType('r'),
+            help="Filename to analyze")
+    chart_parser.set_defaults(run=cmd_chart)
 
     args = parser.parse_args()
 
