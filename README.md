@@ -3,8 +3,8 @@
 The `perf` script executes commands described in *runner* specifications which
 are found in the `runners/` subdirectory and measures the run time. For further
 analysis, the runner name, parameters and the run time are saved in a CSV file.
-The `perf` script works like the Git binary and features two commands `perf` and
-`list` at the moment. To list all known runners call
+The `perf` script works like the Git binary and features three commands: `list`,
+`run` and `chart`. To list all known runners call
 
     $ ./perf list
 
