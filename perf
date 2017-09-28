@@ -145,15 +145,7 @@ def write_results(results):
 
 def cmd_run(args):
     schema = RunnerSchema()
-    runners = {x.name: x for x in get_runners()}
-
-    if args.name:
-        if not args.name in runners.keys():
-            raise RuntimeError("`{}' does not exist".format(args.name))
-
-        runner = runners[args.name]
-        runners = {runner.name: runner}
-
+    runners = {x.name: x for x in get_runners() if x.name not in args.disable}
     results = []
 
     for name, runner in runners.items():
@@ -199,6 +191,10 @@ def Params(arg):
     return dict(split(x) for x in arg.split())
 
 
+def CommaSeparatedList(arg):
+    return arg.split(',')
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--verbose', action='store_true', help="output debug messages")
@@ -212,8 +208,8 @@ def main():
 
     run_parser = cmd_parsers.add_parser('run',
             help="Run one or all runners")
-    run_parser.add_argument('--name', type=str,
-            help="Use this particular runner")
+    run_parser.add_argument('--disable', type=CommaSeparatedList, default=[],
+            help="List of runners not to use")
     run_parser.add_argument('--params', type=Params, default=[],
             help="Template parameters")
     run_parser.set_defaults(run=cmd_run)

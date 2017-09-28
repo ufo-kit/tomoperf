@@ -12,9 +12,9 @@ and to run all runners call
 
     $ ./perf run
 
-To run a specific runner use
+To disable one or more runners use
 
-    $ ./perf run --name foo
+    $ ./perf run --disable foo,bar
 
 and to see more output pass the `--verbose` flag to the `perf` script.
 
