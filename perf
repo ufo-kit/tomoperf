@@ -180,11 +180,12 @@ def cmd_chart(args):
     data.set_index(keys=['name'])
     headers = list(data)
     names = data['name'].unique()
+    num_groups = len(names)
 
     fig = plt.figure(figsize=(8, 4))
     ax = fig.add_subplot(111)
-    xs = np.arange(len(data) / len(names))
-    width = 0.2
+    xs = np.arange(len(data) / num_groups)
+    width = 0.25
     colors = iter(plt.rcParams['axes.prop_cycle'])
 
     for i, name in enumerate(names):
@@ -192,9 +193,12 @@ def cmd_chart(args):
         ax.bar(xs + i * width, ys, width, label=name, color=next(colors)['color'])
 
         for j, v in enumerate(ys):
-            ax.text(i * width + j + 0.03, v + 0.2, '{:3.2f}'.format(v))
+            t = ax.text(i * width + width / 2 + j, v + 0.02, '{:3.2f}'.format(v), ha='center')
+            t.set_fontsize(8)
 
     ax.set_ylabel('Time in seconds')
+    ax.set_xticks(xs + width * num_groups / 2.)
+    ax.set_xticklabels(xs)
     ax.legend(loc='best')
     fig.savefig('build/overview.png', bbox_inches='tight')
 
