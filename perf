@@ -168,8 +168,10 @@ def cmd_run(args):
 
 
 def cmd_chart(args):
-    import pandas as pd
     import jinja2
+    import pandas as pd
+    import numpy as np
+    import matplotlib.pyplot as plt
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
     template = env.get_template('index.html')
@@ -178,6 +180,23 @@ def cmd_chart(args):
     data.set_index(keys=['name'])
     headers = list(data)
     names = data['name'].unique()
+
+    fig = plt.figure(figsize=(8, 4))
+    ax = fig.add_subplot(111)
+    xs = np.arange(len(data) / len(names))
+    width = 0.2
+    colors = iter(plt.rcParams['axes.prop_cycle'])
+
+    for i, name in enumerate(names):
+        ys = data.loc[data.name == name]['elapsed']
+        ax.bar(xs + i * width, ys, width, label=name, color=next(colors)['color'])
+
+        for j, v in enumerate(ys):
+            ax.text(i * width + j + 0.03, v + 0.2, '{:3.2f}'.format(v))
+
+    ax.set_ylabel('Time in seconds')
+    ax.legend(loc='upper left')
+    fig.savefig('build/overview.png', bbox_inches='tight')
 
     with open('build/index.html', 'w') as f:
         f.write(template.render(data=data, headers=headers, names=names))
