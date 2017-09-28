@@ -195,7 +195,7 @@ def cmd_chart(args):
             ax.text(i * width + j + 0.03, v + 0.2, '{:3.2f}'.format(v))
 
     ax.set_ylabel('Time in seconds')
-    ax.legend(loc='upper left')
+    ax.legend(loc='best')
     fig.savefig('build/overview.png', bbox_inches='tight')
 
     with open('build/index.html', 'w') as f:
