@@ -1,14 +1,11 @@
 {
     "name": "tomopy",
     "command": "python",
-    "params": {
-        "algorithm": ["gridrec", "fbp"]
-    },
     "args": [
         "drivers/tomo.py",
         "--width", "${width}",
         "--num-projections", "${num_projections}",
         "--num-slices", "${num_slices}",
-        "--algorithm", "${algorithm}"
+        "--algorithm", "gridrec"
     ]
 }
