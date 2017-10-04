@@ -18,6 +18,14 @@ To disable one or more runners use
 
 and to see more output pass the `--verbose` flag to the `perf` script.
 
+You can analyze the resulting CSV files with the builtin `chart` command
+
+    $ ./perf chart result-*
+
+which will generate some graphs and an HTML file displaying them and the raw
+data. Here is a [demonstration](http://www.ipe.fzk.de/~vogelgesang/tomoperf/) of
+such an output.
+
 
 ### Runner specification
 
