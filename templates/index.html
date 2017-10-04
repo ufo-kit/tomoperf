@@ -7,21 +7,25 @@
   <body>
     <div class="container">
     <h2>Overview</h2>
+    {% for x in data.values() %}
     <figure>
-      <img src="overview.png"/>
+      <a href="#data-{{ loop.index }}"><img src="{{ x.figname }}"/></a>
     </figure>
+    {% endfor %}
     <h2>Full data</h2>
+    {% for name, x in data.items() %}
+    <h3 id="data-{{ loop.index }}">{{ name }}</h3>
     <table>
       <thead>
         <tr>
-          {% for header in headers %}
+          {% for header in x.headers %}
             <th>{{ header }}</th>
           {% endfor %}
         </tr>
       </thead>
       <tbody>
-        {% for name in names %}
-          {% for row in data[data.name == name].iterrows() %}
+        {% for name in x.names %}
+          {% for row in x.data[x.data.name == name].iterrows() %}
           <tr>
             <td>{{ row[1]['name'] }}</td>
             <td>{{ row[1]['elapsed'] | round(3) }}</td>
@@ -33,6 +37,7 @@
         {% endfor %}
       </tbody>
     </table>
+    {% endfor %}
     </div>
   </body>
 </html>

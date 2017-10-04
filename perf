@@ -113,11 +113,6 @@ def get_runners():
     return (schema.loads(open(pjoin('runners', x)).read()).data for x in filenames)
 
 
-def cmd_list(args):
-    for runner in get_runners():
-        print(runner.name)
-
-
 def write_results(results):
     param_index = {}
     last_index = 0
@@ -141,6 +136,38 @@ def write_results(results):
                 row[param_index[k] + 2] = v
 
             writer.writerow(row)
+
+
+def generate_chart(filename, data):
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    num_groups = len(data.names)
+
+    fig = plt.figure(figsize=(8, 4))
+    ax = fig.add_subplot(111)
+    xs = np.arange(len(data.data) / num_groups)
+    width = 0.25
+    colors = iter(plt.rcParams['axes.prop_cycle'])
+
+    for i, name in enumerate(data.names):
+        ys = data.data.loc[data.data.name == name]['elapsed']
+        ax.bar(xs + i * width, ys, width, label=name, color=next(colors)['color'])
+
+        for j, v in enumerate(ys):
+            t = ax.text(i * width + width / 2 + j, v + 0.02, '{:3.2f}'.format(v), ha='center')
+            t.set_fontsize(8)
+
+    ax.set_ylabel('Time in seconds')
+    ax.set_xticks(xs + width * num_groups / 2.)
+    ax.set_xticklabels(xs)
+    ax.legend(loc='best')
+    fig.savefig(filename, bbox_inches='tight')
+
+
+def cmd_list(args):
+    for runner in get_runners():
+        print(runner.name)
 
 
 def cmd_run(args):
@@ -170,40 +197,26 @@ def cmd_run(args):
 def cmd_chart(args):
     import jinja2
     import pandas as pd
-    import numpy as np
-    import matplotlib.pyplot as plt
+
+    class Data(object):
+        def __init__(self, f):
+            self.data = pd.read_csv(f)
+            self.data.set_index(keys=['name'])
+            self.headers = list(self.data)
+            self.names = self.data['name'].unique()
+            self.figname = f.name.replace(':', '_') + '.png'
+
+    data = {f.name: Data(f) for f in args.files}
+
+    for name, d in data.items():
+        name = name.replace(':', '_')
+        generate_chart(os.path.join('build', d.figname), d)
 
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('templates'))
     template = env.get_template('index.html')
 
-    data = pd.read_csv(args.filename)
-    data.set_index(keys=['name'])
-    headers = list(data)
-    names = data['name'].unique()
-    num_groups = len(names)
-
-    fig = plt.figure(figsize=(8, 4))
-    ax = fig.add_subplot(111)
-    xs = np.arange(len(data) / num_groups)
-    width = 0.25
-    colors = iter(plt.rcParams['axes.prop_cycle'])
-
-    for i, name in enumerate(names):
-        ys = data.loc[data.name == name]['elapsed']
-        ax.bar(xs + i * width, ys, width, label=name, color=next(colors)['color'])
-
-        for j, v in enumerate(ys):
-            t = ax.text(i * width + width / 2 + j, v + 0.02, '{:3.2f}'.format(v), ha='center')
-            t.set_fontsize(8)
-
-    ax.set_ylabel('Time in seconds')
-    ax.set_xticks(xs + width * num_groups / 2.)
-    ax.set_xticklabels(xs)
-    ax.legend(loc='best')
-    fig.savefig('build/overview.png', bbox_inches='tight')
-
     with open('build/index.html', 'w') as f:
-        f.write(template.render(data=data, headers=headers, names=names))
+        f.write(template.render(data=data))
 
 
 def Params(arg):
@@ -239,8 +252,8 @@ def main():
 
     chart_parser = cmd_parsers.add_parser('chart',
             help="Analyze results")
-    chart_parser.add_argument('filename', type=argparse.FileType('r'),
-            help="Filename to analyze")
+    chart_parser.add_argument('files', type=argparse.FileType('r'), nargs='+',
+            help="Filenames to analyze")
     chart_parser.set_defaults(run=cmd_chart)
 
     args = parser.parse_args()
@@ -249,10 +262,11 @@ def main():
     log_output = daiquiri.output.Stream(formatter=log_formatter)
     daiquiri.setup(level=logging.DEBUG if args.verbose else logging.INFO, outputs=(log_output,))
 
-    try:
-        args.run(args)
-    except Exception as e:
-        logging.error(str(e))
+    args.run(args)
+    # try:
+    #     args.run(args)
+    # except Exception as e:
+    #     logging.error(str(e))
 
 
 if __name__ == '__main__':
