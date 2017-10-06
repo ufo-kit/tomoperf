@@ -69,22 +69,28 @@ class Runner(object):
         return params
 
     def run(self, params, verbose):
-        logging.info("Running {} ...".format(self.name))
         logging.info("Parameters: {}".format(' '.join(('{}={}'.format(k, v) for k, v in params.items()))))
 
-        try:
-            args = [Template(a).substitute(**params) for a in self.args]
-        except KeyError as e:
-            raise ValueError("Cannot substitute template parameter {}".format(e))
+        def get_substituted_args(args):
+            try:
+                return [Template(a).substitute(**params) for a in args]
+            except KeyError as e:
+                raise ValueError("Cannot substitute template parameter {}".format(e))
+
+        if 'prepare' in self._data:
+            cmd_line = get_substituted_args(self._data['prepare'])
+            logging.info("Preparing {} ...".format(self.name))
+            proc = monitor_process(cmd_line)
 
         cmd_line = [self._data['command']]
 
         if verbose and 'verbose_flag' in self._data:
             cmd_line.append(self._data['verbose_flag'])
 
-        cmd_line.extend(args)
+        cmd_line.extend(get_substituted_args(self.args))
         logging.debug("Command: {}".format(cmd_line))
 
+        logging.info("Running {} ...".format(self.name))
         start = time.time()
         proc = monitor_process(cmd_line)
         end = time.time()
@@ -98,6 +104,7 @@ class Runner(object):
 
 class RunnerSchema(Schema):
     name = fields.Str(required=True)
+    prepare = fields.List(fields.String)
     command = fields.Str(required=True)
     args = fields.List(fields.String, required=True)
     verbose_flag = fields.Str(load_from='verbose-flag')
