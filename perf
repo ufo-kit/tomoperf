@@ -152,10 +152,10 @@ def generate_chart(filename, data):
 
     num_groups = len(data.names)
 
-    fig = plt.figure(figsize=(8, 4))
+    fig = plt.figure(figsize=(12, 4))
     ax = fig.add_subplot(111)
     xs = np.arange(len(data.data) / num_groups)
-    width = 0.25
+    width = 0.18
     colors = iter(plt.rcParams['axes.prop_cycle'])
 
     for i, name in enumerate(data.names):
