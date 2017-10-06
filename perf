@@ -5,6 +5,7 @@ import re
 import json
 import csv
 import shlex
+import shutil
 import time
 import datetime
 import argparse
@@ -210,6 +211,7 @@ def cmd_chart(args):
     data = {f.name: Data(f) for f in args.files}
 
     for name, d in data.items():
+        shutil.copyfile(name, os.path.join('build', name))
         name = name.replace(':', '_')
         generate_chart(os.path.join('build', d.figname), d)
 

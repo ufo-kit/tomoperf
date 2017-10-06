@@ -39,7 +39,9 @@
       <section id="data" class="container">
         <h2>Full data</h2>
         {% for name, x in data.items() %}
-        <h3 id="data-{{ loop.index }}">{{ name }}</h3>
+        <h3 id="data-{{ loop.index }}">
+          <a href="./{{ name }}">{{ name }}</a>
+        </h3>
         <table>
           <thead>
             <tr>
