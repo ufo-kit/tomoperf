@@ -1,7 +1,7 @@
 {
     "name": "tomopy",
-    "command": "python",
-    "args": [
+    "command": [
+        "python",
         "drivers/tomo.py",
         "--width", "${width}",
         "--num-projections", "${num_projections}",

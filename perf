@@ -50,8 +50,8 @@ class Runner(object):
         return self._data['name']
 
     @property
-    def args(self):
-        return self._data['args']
+    def command(self):
+        return self._data['command']
 
     @property
     def params(self):
@@ -62,7 +62,7 @@ class Runner(object):
         pattern = re.compile(r'\$\{(\w+)\}')
         params = []
 
-        for arg in self.args:
+        for arg in self.command:
             for match in pattern.finditer(arg):
                 params.append(match.group(1))
 
@@ -82,12 +82,11 @@ class Runner(object):
             logging.info("Preparing {} ...".format(self.name))
             proc = monitor_process(cmd_line)
 
-        cmd_line = [self._data['command']]
+        cmd_line = get_substituted_args(self.command)
 
         if verbose and 'verbose_flag' in self._data:
             cmd_line.append(self._data['verbose_flag'])
 
-        cmd_line.extend(get_substituted_args(self.args))
         logging.debug("Command: {}".format(cmd_line))
 
         logging.info("Running {} ...".format(self.name))
@@ -105,8 +104,7 @@ class Runner(object):
 class RunnerSchema(Schema):
     name = fields.Str(required=True)
     prepare = fields.List(fields.String)
-    command = fields.Str(required=True)
-    args = fields.List(fields.String, required=True)
+    command = fields.List(fields.String, required=True)
     verbose_flag = fields.Str(load_from='verbose-flag')
     params = fields.Dict()
 

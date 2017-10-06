@@ -8,8 +8,8 @@
         "--num-projections", "${num_projections}",
         "--num-slices", "${num_slices}"
     ],
-    "command": "python",
-    "args": [
+    "command": [
+        "python",
         "drivers/lprec.py",
         "--width", "${width}",
         "--num-projections", "${num_projections}",

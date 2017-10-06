@@ -1,7 +1,7 @@
 {
     "name": "astra",
-    "command": "python",
-    "args": [
+    "command": [
+        "python",
         "drivers/astr.py",
         "--width", "${width}",
         "--num-projections", "${num_projections}",

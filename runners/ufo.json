@@ -1,7 +1,7 @@
 {
-    "name": "ufo",
-    "command": "ufo-launch",
-    "args": [
+    "name": "ufo-fbp",
+    "command": [
+        "ufo-launch",
         "--quiet",
         "dummy-data width=${width} height=${num_projections} number=${num_slices} ! fft ! filter ! ifft ! backproject ! null download=true"
     ]

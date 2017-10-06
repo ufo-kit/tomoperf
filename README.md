@@ -30,21 +30,26 @@ such an output.
 ### Runner specification
 
 A runner specification is a simple top-level JSON object file. The required
-fields are `name`, the `command` to call and the parameterized `args` list which
-might be empty to call the command with. Furthermore parameters that are known
-to the runner and not to be supplied by the user are stored in a `params`
-dictionary with the parameter name mapping to a list of values. The following is
-a valid specification:
+fields are `name` and the parameterized `command` list to call. Furthermore
+parameters that are known to the runner and not to be supplied by the user are
+stored in a `params` dictionary with the parameter name mapping to a list of
+values. To prepare the environment, a `prepare` command list can be used and
+is populate with the same arguments as the `command` list.
+
+The following is a valid specification:
 
 ```json
 {
     "name": "foo",
-    "command": "python",
     "params": {
         "age": [12, 13, 14, 28],
         "city": ["New York", "Berlin"]
     },
-    "args": [
+    "prepare": [
+        "bash somescript.sh ${name}"
+    ],
+    "command": [
+        "python",
         "somescript.py",
         "--name", "${name}",
         "--age", "${age}",
