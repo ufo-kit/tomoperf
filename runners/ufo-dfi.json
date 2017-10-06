@@ -1,0 +1,10 @@
+{
+    "name": "ufo-dfi",
+    "command": "ufo-launch",
+    "args": [
+        "--quiet",
+        "dummy-data width=${width} height=${num_projections} number=${num_slices} ! ",
+        "zeropad ! fft dimensions=1 auto-zeropadding=0 ! ",
+        "dfi-sinc ! swap-quadrants ! ifft ! swap-quadrants ! null download=true"
+    ]
+}

@@ -3,6 +3,6 @@
     "command": "ufo-launch",
     "args": [
         "--quiet",
-        "read dummy-data width=${width} height=${num_projections} number=${num_slices} ! fft ! filter ! ifft ! backproject ! null download=true"
+        "dummy-data width=${width} height=${num_projections} number=${num_slices} ! fft ! filter ! ifft ! backproject ! null download=true"
     ]
 }
