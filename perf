@@ -272,11 +272,10 @@ def main():
     log_output = daiquiri.output.Stream(formatter=log_formatter)
     daiquiri.setup(level=logging.DEBUG if args.verbose else logging.INFO, outputs=(log_output,))
 
-    args.run(args)
-    # try:
-    #     args.run(args)
-    # except Exception as e:
-    #     logging.error(str(e))
+    try:
+        args.run(args)
+    except Exception as e:
+        logging.error(str(e))
 
 
 if __name__ == '__main__':
