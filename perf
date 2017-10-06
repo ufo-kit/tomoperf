@@ -175,7 +175,8 @@ def cmd_run(args):
     runners = {x.name: x for x in get_runners() if x.name not in args.disable}
     results = []
 
-    for name, runner in runners.items():
+    for name in sorted(runners.keys()):
+        runner = runners[name]
         missing = set(runner.param_names) - set(args.params).union(set(runner.params.keys()))
 
         if missing:
