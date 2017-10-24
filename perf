@@ -101,6 +101,37 @@ class Runner(object):
         return elapsed
 
 
+class PerformanceRunner(Runner):
+    def __init__(self, data):
+        super(PerformanceRunner, self).__init__(data)
+
+    def run(self, params, verbose):
+        return dict(elapsed=super(PerformanceRunner, self).run(params, verbose))
+
+
+class QualityRunner(Runner):
+    def __init__(self, data):
+        super(QualityRunner, self).__init__(data)
+
+    def run(self, params, verbose):
+        import tifffile
+        import numpy as np
+        from skimage.measure import compare_mse, compare_psnr, compare_ssim
+
+        elapsed = super(QualityRunner, self).run(params, verbose)
+
+        def mask(shape):
+            xx, yy = np.mgrid[:shape[0], :shape[1]]
+            return ((xx - shape[0] / 2)**2 + (yy - shape[1] / 2)**2) <= (shape[0] / 2)**2
+
+        out = tifffile.imread(params['output'])
+        ref = tifffile.imread(params['reference'])
+
+        out *= mask(out.shape)
+        ref *= mask(ref.shape)
+        return dict(elapsed=elapsed, mse=compare_mse(ref, out), psnr=compare_psnr(ref, out), ssim=compare_ssim(ref, out))
+
+
 class RunnerSchema(Schema):
     name = fields.Str(required=True)
     prepare = fields.List(fields.String)
@@ -108,35 +139,54 @@ class RunnerSchema(Schema):
     verbose_flag = fields.Str(load_from='verbose-flag')
     params = fields.Dict()
 
+    def __init__(self, runner_cls):
+        self._runner_cls = runner_cls
+        super(RunnerSchema, self).__init__()
+
     @post_load
     def make_user(self, data):
-        return Runner(data)
+        return self._runner_cls(data)
 
+RUNNER_TYPES = {
+    'quality': QualityRunner,
+    'perf': PerformanceRunner
+}
 
-def get_runners():
-    filenames = sorted((x for x in os.listdir(os.path.abspath('runners')) if x.endswith('.json')))
-    schema = RunnerSchema()
-    return (schema.loads(open(pjoin('runners', x)).read()).data for x in filenames)
+def get_runners(selection=None):
+    def load_from_subdir(subdir):
+        schema = RunnerSchema(RUNNER_TYPES[subdir])
+        filenames = sorted((x for x in os.listdir(os.path.abspath(pjoin('runners', subdir))) if x.endswith('.json')))
+        return (schema.loads(open(pjoin('runners', subdir, x)).read()).data for x in filenames)
+
+    selection = (selection,) if selection else ('quality', 'perf')
+    return {x: load_from_subdir(x) for x in selection}
 
 
 def write_results(results):
+    if not results:
+        return
+
     param_index = {}
-    last_index = 0
+    num_params = 0
+    last_index = len(results[0][1]) - 1
 
     for name, elapsed, params in results:
         for k in params.keys():
             if not k in param_index:
                 param_index[k] = last_index
                 last_index += 1
+                num_params += 1
 
     csv_name = 'result-{}.csv'.format(datetime.datetime.now().isoformat().split('.')[0])
 
     with open(csv_name, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['name', 'elapsed'] + param_index.keys())
+        result_names = results[0][1].keys()
+        header = ['name'] + result_names + param_index.keys()
+        writer.writerow(header)
 
-        for name, elapsed, params in results:
-            row = [name, elapsed] + [None]*last_index
+        for name, result, params in results:
+            row = [name] + [result[x] for x in result_names] + [None]*num_params
 
             for k, v in params.items():
                 row[param_index[k] + 2] = v
@@ -172,13 +222,13 @@ def generate_chart(filename, data):
 
 
 def cmd_list(args):
-    for runner in get_runners():
-        print(runner.name)
+    for runner_type, runner_list in get_runners(args.type).items():
+        for runner in runner_list:
+            print("{}:{}".format(runner_type, runner.name))
 
 
-def cmd_run(args):
-    schema = RunnerSchema()
-    runners = {x.name: x for x in get_runners() if x.name not in args.disable}
+def run_specific_runners(runners, args):
+    runners = {x.name: x for x in runners if x.name not in args.disable}
     results = []
 
     for name in sorted(runners.keys()):
@@ -195,10 +245,17 @@ def cmd_run(args):
 
         for elem in itertools.product(*params.values()):
             product = dict(zip(params.keys(), elem))
-            elapsed = runner.run(product, args.verbose)
-            results.append((name, elapsed, product))
+            result = runner.run(product, args.verbose)
+            results.append((name, result, product))
 
     write_results(results)
+
+
+def cmd_run(args):
+    runners = get_runners(args.type)
+
+    for r in runners.values():
+        run_specific_runners(r, args)
 
 
 def cmd_chart(args):
@@ -248,10 +305,14 @@ def main():
 
     list_parser = cmd_parsers.add_parser('list',
             help="List all runners")
+    list_parser.add_argument('--type', choices=['quality', 'perf'], default=None,
+            help="List only runners of given type")
     list_parser.set_defaults(run=cmd_list)
 
     run_parser = cmd_parsers.add_parser('run',
             help="Run one or all runners")
+    run_parser.add_argument('--type', choices=['quality', 'perf'], default=None,
+            help="List only runners of given type")
     run_parser.add_argument('--disable', type=CommaSeparatedList, default=[],
             help="List of runners not to use")
     run_parser.add_argument('--params', type=Params, default=[],

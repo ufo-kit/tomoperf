@@ -1,10 +1,13 @@
 ## About
 
 The `perf` script executes commands described in *runner* specifications which
-are found in the `runners/` subdirectory and measures the run time. For further
-analysis, the runner name, parameters and the run time are saved in a CSV file.
-The `perf` script works like the Git binary and features three commands: `list`,
-`run` and `chart`. To list all known runners call
+are found in the `runners/` subdirectory to benchmark certain aspects. At the
+moment, there are two types of benchmarks: performance benchmarks measuring the
+run-time and quality benchmarks which measure image metrics of the output with a
+given input. For further analysis, the runner name, parameters and the run time
+are saved in a CSV file.  The `perf` script works like the Git binary and
+features three commands: `list`, `run` and `chart`. To list all known runners
+call
 
     $ ./perf list
 
@@ -16,7 +19,10 @@ To disable one or more runners use
 
     $ ./perf run --disable foo,bar
 
-and to see more output pass the `--verbose` flag to the `perf` script.
+and to see more output pass the `--verbose` flag to the `perf` script. To
+restrict to certain benchmark types, use
+
+    $ ./perf run --type perf
 
 You can analyze the resulting CSV files with the builtin `chart` command
 

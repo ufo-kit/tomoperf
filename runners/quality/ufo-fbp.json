@@ -1,0 +1,8 @@
+{
+    "name": "ufo-fbp",
+    "command": [
+        "ufo-launch",
+        "--quiet",
+        "read path=${input} ! fft ! filter ! ifft ! backproject ! write filename=${output}"
+    ]
+}

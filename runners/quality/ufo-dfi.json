@@ -1,0 +1,10 @@
+{
+    "name": "ufo-dfi",
+    "command": [
+        "ufo-launch",
+        "--quiet",
+        "read path=${input} ! ",
+        "zeropad ! fft dimensions=1 auto-zeropadding=0 ! ",
+        "dfi-sinc ! swap-quadrants ! ifft ! swap-quadrants ! write filename=${output}"
+    ]
+}
