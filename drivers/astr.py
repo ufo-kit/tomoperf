@@ -18,8 +18,7 @@ def main():
     proj_geom = astra.create_proj_geom('parallel3d', 1.0, 1.0, args.num_slices, args.width, angles)
 
     vid = astra.data3d.create('-vol', vol_geom)
-    cube = np.zeros((args.num_slices, args.width, args.width), dtype=np.float32)
-    pid, proj_data = astra.create_sino3d_gpu(cube, proj_geom, vol_geom)
+    pid = astra.data3d.create('-proj3d', proj_geom, 0.0)
 
     config = astra.astra_dict('BP3D_CUDA')
     config['ProjectionDataId'] = pid
