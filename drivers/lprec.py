@@ -14,7 +14,7 @@ def main():
 
     args = parser.parse_args()
     R = np.zeros((args.num_slices, args.width, args.num_projections), dtype=np.float32)
-    handle = lprecmods.lpTransform.lpTransform(args.width, args.num_projections, args.num_slices, 'hamming', True)
+    handle = lprecmods.lpTransform.lpTransform(args.width, args.num_projections, args.num_slices, None, False)
 
     if args.prepare:
         # We cache the intermediate output for later use
@@ -34,7 +34,7 @@ def main():
             shutil.copyfile('Pgl', pgl_name)
     else:
         handle.initcmem()
-        frec = handle.adj(R, args.width / 2 - 4)
+        frec = handle.adj(R, args.width / 2)
 
 
 if __name__ == '__main__':
