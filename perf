@@ -88,7 +88,6 @@ class Runner(object):
             cmd_line.append(self._data['verbose_flag'])
 
         logging.debug("Command: {}".format(cmd_line))
-
         logging.info("Running {} ...".format(self.name))
         start = time.time()
         proc = monitor_process(cmd_line)
@@ -97,6 +96,8 @@ class Runner(object):
 
         if proc.returncode == 0:
             logging.info("SUCCESS: {:3.5f}s elapsed".format(elapsed))
+        else:
+            logging.warn("Return code {}".format(proc.returncode))
 
         return elapsed
 
